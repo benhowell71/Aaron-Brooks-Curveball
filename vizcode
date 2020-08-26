@@ -1,0 +1,113 @@
+library(formattable)
+
+brooks <- data %>%
+  filter(Player == "Aaron Brooks")
+
+brooks1 <- brooks %>%
+  filter(At.Bat.Pitch == "1")
+
+table(brooks1$Pitch)
+
+brookscu <- count(brooks1, Pitch)
+brookscu <- brookscu %>%
+  filter(n > 1)
+brookscu <- brookscu %>%
+  mutate(Usg = round((n / 298)*100, digits = 1))
+
+first <- data %>%
+  filter(At.Bat.Pitch == "1")
+
+firstdf <- count(first, Label, Pitch)
+firstdf <- spread(firstdf, Pitch, n, fill = 0)
+head(firstdf)
+firstdf <- firstdf %>%
+  mutate(Pitches = `4-Seam` + Changeup + Curveball + Cutter + `Knuckle Curve` + Knuckleball + Sinker + Slider + Splitter + Unknown) %>%
+  select(Label:Splitter, Pitches)
+firstdf <- firstdf %>%
+  mutate(FF.USG = round((`4-Seam` / Pitches)*100, digits = 1)) %>%
+  mutate(SI.USG = round((Sinker / Pitches) *100, digits = 1)) %>%
+  mutate(CUT.USG = round((Cutter / Pitches) *100, digits = 1)) %>%
+  mutate(CH.USG = round((Changeup / Pitches) *100, digits = 1)) %>%
+  mutate(SPLIT.USG = round((Splitter / Pitches) *100, digits = 1)) %>%
+  mutate(CU.USG = round((Curveball / Pitches) *100, digits = 1)) %>%
+  mutate(KNC.USG = round((`Knuckle Curve` / Pitches)*100, digits = 1)) %>%
+  mutate(SL.USG = round((Slider / Pitches) *100, digits = 1)) %>%
+  mutate(KN.USG = round((Knuckleball / Pitches)*100, digits = 1))
+
+firstdf1 <- firstdf %>%
+  select(Label, Pitches:KN.USG) %>%
+  filter(Pitches >= 20) %>%
+  select(Label, CU.USG) 
+  
+
+velocu <- velo %>%
+  select(Label, "CU%")
+
+names(firstdf1) <- c("Label", "F-CU%")
+
+curveball <- right_join(firstdf1, velocu, by = "Label")
+
+curveball <- curveball %>%
+  filter(`CU%` > 0) %>%
+  filter(`F-CU%` >=0) %>%
+  mutate(diff = `F-CU%` - `CU%`)
+
+names(curveball) <- c("Player", "F-CU%", "CU%", "Difference")
+
+formattable(curveball)
+
+curveball %>%
+  arrange(desc(Difference)) %>%
+  formattable(align =c("l","c","c","c","c", "c", "c", "c", "r"), 
+              list(`Indicator Name` = formatter(
+                "span", style = ~ style(color = "grey",font.weight = "bold")),
+                `F-CU%` = color_tile("pink", "red"),
+                `CU%` = color_tile("lightblue", "skyblue"),
+                Difference = color_tile("lightgreen", "grey")
+              ))
+
+table(first$Result)
+
+brookscu1 <- brooks1 %>%
+  filter(Pitch == "Curveball")
+table(brookscu1$Result)
+
+
+ggplot(data = brookscu1, aes(x = x, y = y)) +
+  geom_path(data = sz, aes(x = x1, y= y1)) + geom_point(aes(color = Bats), size = 3) + xlim(-2, 2) + ylim(0, 6)  +
+  labs(x = "feet from home plate", y = "feet above home plate", title = "Aaron Brooks F-Pitch Curveball Locations", subtitle = "Pitcher Perspective",
+       caption = "For 51 first pitch curveballs")
+
+"Player" <- c("KBO", "Aaron Brooks")
+"F-Strike%" <- c("59%", "61")
+"F-Swing%" <- c("28%", "14%")
+"F-CS%" <- c("31%", "47%")
+
+table <- data.frame(`F-Strike%`, `F-Swing%`, `F-CS%`, row.names = Player)
+
+table %>%
+  formattable(align =c("l","c","c","c","c", "c", "c", "c", "r"), 
+              list(`Indicator Name` = formatter(
+                "span", style = ~ style(color = "grey",font.weight = "bold")),
+                `F-Strike%` = color_tile("pink", "red"),
+                `F-Swing%` = color_tile("lightblue", "skyblue"),
+                `F-CS%` = color_tile("lightgreen", "green")
+              ))
+head
+head(table)
+table(brookscu1$Bats2)
+
+brooksrhh <- brooks %>%
+  filter(Bats == "R")
+table(brooksrhh$Result)
+brookslhh <- brooks %>%
+  filter(Bats == "L")
+table(brookslhh$Result)
+
+brookscul <- brookscu1 %>%
+  filter(Bats == "L")
+table(brookscul$Result)
+
+brookscur <- brookscu1 %>%
+  filter(Bats == "R")
+table(brookscur$Result)
